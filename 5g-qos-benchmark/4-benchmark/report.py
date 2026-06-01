@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""5G QoS Report — Read benchmark JSON, print report"""
+import json, sys
+def main():
+    if len(sys.argv)<2: print("Usage: python3 report.py results.json"); sys.exit(1)
+    with open(sys.argv[1]) as f: d=json.load(f)
+    lines=[]
+    lines.append("="*60); lines.append("  5G QoS BENCHMARK REPORT"); lines.append("="*60)
+    lines.append(f"  ID       : {d.get('benchmark_id','N/A')}")
+    lines.append(f"  Time     : {d.get('timestamp','N/A')}")
+    lines.append(f"  Target   : {d.get('config',{}).get('target','N/A')}")
+    lines.append("")
+    lines.append("  CORE SERVICES")
+    for s,v in d.get("core_services",{}).items(): lines.append(f"    {s:30s} {'OK' if v else 'DOWN'}")
+    lines.append("")
+    p=d.get("ping",{}); lines.append("  PING RESULTS")
+    lines.append(f"    Avg Latency  : {p.get('latency_avg_ms','N/A')} ms")
+    lines.append(f"    Min Latency  : {p.get('latency_min_ms','N/A')} ms")
+    lines.append(f"    Max Latency  : {p.get('latency_max_ms','N/A')} ms")
+    lines.append(f"    Jitter       : {p.get('jitter_ms','N/A')} ms")
+    lines.append(f"    Packet Loss  : {p.get('packet_loss_pct','N/A')}%")
+    lines.append("")
+    ip=d.get("iperf3",{}); lines.append("  IPERF3 RESULTS")
+    if "error" in ip: lines.append(f"    Error: {ip['error']}")
+    else:
+        lines.append(f"    Download  : {ip.get('received_mbps','N/A')} Mbps")
+        lines.append(f"    Upload    : {ip.get('sent_mbps','N/A')} Mbps")
+        lines.append(f"    Retx      : {ip.get('retransmits','N/A')}")
+    lines.append("")
+    h=d.get("http_download",{}); lines.append("  HTTP DOWNLOAD")
+    lines.append(f"    Throughput : {h.get('throughput_mbps','N/A')} Mbps")
+    lines.append("")
+    lines.append("="*60)
+    lines.append(f"  QoS RATING: {d.get('qos_rating','N/A')} ({d.get('qos_class','N/A')})")
+    lines.append("="*60)
+    r="\n".join(lines); print(r)
+    if len(sys.argv)>2:
+        with open(sys.argv[2],"w") as f: f.write(r)
+        print(f"Saved: {sys.argv[2]}")
+if __name__=="__main__": main()
